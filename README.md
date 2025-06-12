@@ -35,6 +35,7 @@ This project is a Retrieval-Augmented Generation (RAG) chatbot using:
 
 ---
 
+
 ## 🧪 Example Output
 
 **Q:** What is the average mark in the file?  
@@ -56,7 +57,14 @@ This project is a Retrieval-Augmented Generation (RAG) chatbot using:
 ├── templates/
 │   └── index.html          # Chat UI page
 ```
+---
+## 🔧requirements.txt contains:
 
+    flask
+    google-generativeai
+    sentence-transformers
+    qdrant-client
+    python-dotenv
 ---
 
 ## ⚙️ Setup Instructions
