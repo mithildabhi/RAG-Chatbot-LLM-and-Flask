@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gemini Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Gemini Chatbot with Your Data</h1>
+        <!-- Ask Form -->
+        <form method="POST" action="/" style="display: flex; align-items: center; gap: 10px;">
+            <textarea name="user_input" rows="3" cols="50" placeholder="Ask something..."></textarea>
+            <button type="submit">Ask</button>
+            <!-- Redirect Link -->
+        </form>
+
+        <div class="response">
+            <h3>Response:</h3>
+            <p>{{ answer }}</p>
+        </div>
+        
+    </div>
+    <div class="response">
+    <h3>Past Conversation:</h3>
+    <ul>
+        {% for item in history %}
+        <li><strong>Q:</strong> {{ item.question }}<br><strong>A:</strong> {{ item.answer }}</li>
+        {% endfor %}
+    </ul>
+    <h3>Latest Response:</h3>
+    <p>{{ answer }}</p>
+</div>
+
+<!-- Clear history -->
+<form method="POST" action="/clear">
+    <button type="submit">Clear History</button>
+</form>
+
+</body>
+</html>
