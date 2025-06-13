@@ -3,3 +3,6 @@ google-generativeai
 sentence-transformers
 qdrant-client
 python-dotenv
+file-type
+langchain
+pandas
