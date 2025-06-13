@@ -8,6 +8,13 @@ This project is a Retrieval-Augmented Generation (RAG) chatbot using:
 - **SentenceTransformers** for vector embeddings
 - **Qdrant (in-memory)** as the vector store
 - Your **custom data (CSV, TXT)** as knowledge base
+---
+## ⚠️Warning- Things to make sure...
+
+- **Don't upload a large data set more than 100 rows**
+- **Make sure that processing power of your PC is high**
+- **For one search in large dataset it will utilize 100% CPU**
+- **It  must be 'txt' and 'csv' fro better answer** 
 
 ---
 
@@ -56,6 +63,8 @@ This project is a Retrieval-Augmented Generation (RAG) chatbot using:
 │   └── style.css           # CSS styling
 ├── templates/
 │   └── index.html          # Chat UI page
+├── uploads/
+│   └── your_uploads CSV/TXT  # Your uploaded file saved and used from here
 ```
 ---
 ## 🔧requirements.txt contains:
@@ -119,12 +128,15 @@ Edit `data/marks.csv` or add `.txt` files for more context.
 - Qdrant Vector Search
 - dotenv
 - flask_session
+- files
 
 ---
 
 ## 📝 License
 
-MIT License
+FREE TO USE THIS REPO
+
+FOLK THE REPO AND USE
 
 ---
 
