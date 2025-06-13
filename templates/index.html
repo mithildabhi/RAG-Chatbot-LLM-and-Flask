@@ -7,34 +7,42 @@
 <body>
     <div class="container">
         <h1>🧠 Gemini Chatbot with Your Data</h1>
-        <!-- Ask Form -->
-        <form method="POST" action="/" style="display: flex; align-items: center; gap: 10px;">
-            <textarea name="user_input" rows="3" cols="50" placeholder="Ask something..."></textarea>
+
+        <form method="POST" action="/">
+            <textarea name="user_input" rows="4" cols="50" placeholder="Ask something..."></textarea>
             <button type="submit">Ask</button>
-            <!-- Redirect Link -->
+        </form>
+
+        <form method="POST" action="/" enctype="multipart/form-data">
+            <label for="file">Upload New Data:</label>
+            <input type="file" name="file" required>
+            <input type="submit" value="Upload" onclick="if(document.getElementsByName('file')[0].files.length > 0){ alert('File uploaded and processed!'); window.location.href='/'; }">
         </form>
 
         <div class="response">
-            <h3>Response:</h3>
+            <h3>Latest Response:</h3>
             <p>{{ answer }}</p>
         </div>
-        
+
+        <div class="response">
+            <h3>Past Conversation:</h3>
+            <ul>
+                {% for item in history %}
+                <li><strong>Q:</strong> {{ item.question }}<br><strong>A:</strong> {{ item.answer }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <form method="POST" action="/clear" style="text-align: center; margin-top: 20px;">
+            <button type="submit">Clear History</button>
+        </form>
+
+        {% if session.uploaded_file_path %}
+            <p>📂 **Using uploaded file:** {{ session.uploaded_file_path.split('/')[-1] }}</p>
+        {% else %}
+            <p>📄 **Using default data:** marks.csv </p>
+        {% endif %}
+
     </div>
-    <div class="response">
-    <h3>Past Conversation:</h3>
-    <ul>
-        {% for item in history %}
-        <li><strong>Q:</strong> {{ item.question }}<br><strong>A:</strong> {{ item.answer }}</li>
-        {% endfor %}
-    </ul>
-    <h3>Latest Response:</h3>
-    <p>{{ answer }}</p>
-</div>
-
-<!-- Clear history -->
-<form method="POST" action="/clear">
-    <button type="submit">Clear History</button>
-</form>
-
 </body>
 </html>
