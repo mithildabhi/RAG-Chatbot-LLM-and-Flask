@@ -13,11 +13,15 @@
             <button type="submit">Ask</button>
         </form>
 
-        <form method="POST" action="/" enctype="multipart/form-data">
+        <form method="POST" action="/upload_file" enctype="multipart/form-data">
             <label for="file">Upload New Data:</label>
             <input type="file" name="file" required>
-            <input type="submit" value="Upload" onclick="if(document.getElementsByName('file')[0].files.length > 0){ alert('File uploaded and processed!'); window.location.href='/'; }">
+            <input type="submit" value="Upload">
         </form>
+        {% if session.uploaded_file_path %}
+            <p>File uploaded successfully.</p>
+        {% endif %} 
+
 
         <div class="response">
             <h3>Latest Response:</h3>
