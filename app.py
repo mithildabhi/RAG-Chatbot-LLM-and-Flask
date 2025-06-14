@@ -8,11 +8,6 @@ import google.generativeai as genai
 from flask_session import Session
 from werkzeug.utils import secure_filename
 import pandas as pd
-# import chardet
-
-# from fileinput import filename
-# from distutils.log import debug  <-- Removed unused import
-
 
 df = pd.DataFrame()  # Initialize an empty DataFrame to avoid errors if not loaded
 # Flask App Starts here
@@ -28,7 +23,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'csv', 'docx', 'xlsx', 'pptx'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 # Load API key
 load_dotenv()
@@ -62,7 +56,6 @@ def load_docs():
             docs = f.read().split("\n\n")
     return docs
 
-
 # Flask app setup
 app.config["SECRET_KEY"] = "mithildabhi"
 app.config["SESSION_TYPE"] = "filesystem"
@@ -74,40 +67,28 @@ def index():
         session["history"] = []
     
     answer = "" # for user input answer history
-    if request.method == "POST":
-        if 'file' in request.files:
-            file = request.files['file']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                session["uploaded_file_path"] = filepath
-
-        # 🔁 Always (re)load and (re)embed based on session file path
-        if "uploaded_file_path" not in session or not session["uploaded_file_path"]:
-            print("⚙️ No uploaded file found — using default data.")
-
-        # Load and embed
-        uploaded_data = load_docs()
-        embeddings = embed_model.encode(uploaded_data)
-
-        # Create collection
-        client.recreate_collection(
-            collection_name="docs",
-            vectors_config=VectorParams(size=384, distance=Distance.COSINE)
-        )
-        client.upload_collection(
-            collection_name="docs",
-            vectors=embeddings,
-            payload=[{"text": t} for t in uploaded_data],
-            ids=list(range(len(uploaded_data)))
-        )
-        print("✅ Collection uploaded to Qdrant.")
-        
-            
-        # if request.method == "POST":
+    if request.method == "POST":        
         user_input = request.form["user_input"]
         if user_input:            
+            if "uploaded_file_path" not in session or not session["uploaded_file_path"]:
+                print("⚙️ No uploaded file found — using default data.")
+
+            # Load and embed
+            uploaded_data = load_docs()
+            embeddings = embed_model.encode(uploaded_data)
+            # Create collection
+            client.recreate_collection(
+                collection_name="docs",
+                vectors_config=VectorParams(size=384, distance=Distance.COSINE)
+            )
+            client.upload_collection(
+                collection_name="docs",
+                vectors=embeddings,
+                payload=[{"text": t} for t in uploaded_data],
+                ids=list(range(len(uploaded_data)))
+            )
+            print("✅ Collection uploaded to Qdrant.")
+
             # Embed and search relevant context
             query_embedding = embed_model.encode([user_input])[0]
             results = client.search(
@@ -133,17 +114,48 @@ def index():
     
     return render_template("index.html", answer=answer, history=session["history"])    
 
-@app.route("/upload", methods=["GET"])
-def upload():   
-    return redirect(url_for("index"))
+@app.route("/upload_file", methods=["POST"])
+def upload_file():
+    if "history" not in session:
+            session["history"] = []
 
+    if 'file' not in request.files:
+        return redirect(request.url) # Or render an error
+
+    file = request.files['file']
+    if file.filename == '': 
+        return redirect(request.url) # Or render an error
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        session["uploaded_file_path"] = filepath
+        
+        # Load and embed
+        uploaded_data = load_docs()
+        embeddings = embed_model.encode(uploaded_data)
+        # Create collection
+        client.recreate_collection(
+            collection_name="docs",
+            vectors_config=VectorParams(size=384, distance=Distance.COSINE)
+        )
+        client.upload_collection(
+            collection_name="docs",
+            vectors=embeddings,
+            payload=[{"text": t} for t in uploaded_data],
+            ids=list(range(len(uploaded_data)))
+        )
+        print("✅ Collection uploaded to Qdrant.")
+        return redirect(url_for("index"))
+    return redirect(url_for("index"))
 
 
 @app.route("/clear", methods=["GET", "POST"])
 def clear():
     session.pop("history", None)  # Remove if exists, ignore if not
     session.pop("uploaded_file_path", None)  # ✅ clear uploaded path
-
+    
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
