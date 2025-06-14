@@ -24,36 +24,42 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'csv', 'docx', 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Load API key
+# Load API key here
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# Models and Vector DB setup
+# Models and Vector DB 
 embed_model = SentenceTransformer('all-MiniLM-L6-v2')
 llm = genai.GenerativeModel("gemini-1.5-flash") # generative model of gemini used for generating answers
 # Initialize Qdrant client
 client = QdrantClient(":memory:")
 
-# Load & embed data
+# Load and embed data
 def load_docs():
     filepath = session.get("uploaded_file_path")
-    if filepath and os.path.exists(filepath):
-        print("🔹 Using uploaded file:", filepath)
-    else:  
-        filepath = "data/marks.csv"  # fallback to default
-        print("🔸 Using default file:", filepath)
-
+    
     _, ext = os.path.splitext(filepath)
     ext = ext.lower()
-    if ext == ".csv" or ".xlsx":
-        print("⏳ Reading CSV file...")
+    if ext == ".csv" or ext == ".xlsx":
+        print(" Reading CSV file...")
         df = pd.read_csv(filepath, encoding="latin1")
+        # print(df.columns)
+        # docs = df.head(100).to_dict(orient='records')
+        # docs = df
         # Convert each row to a comma-separated string of values
         docs = df.astype(str).apply(", ".join, axis=1).tolist()
+        print(docs)
     else:
         with open(filepath, "r", encoding="latin1") as f:
             docs = f.read().split("\n\n")
+            
+    if filepath and os.path.exists(filepath):
+        print("-- Using uploaded file:", filepath)
+    else:  
+        filepath = "data/marks.csv"  # fallback to default
+        print("-- Using default file:", filepath)
+
     return docs
 
 # Flask app setup
@@ -71,7 +77,7 @@ def index():
         user_input = request.form["user_input"]
         if user_input:            
             if "uploaded_file_path" not in session or not session["uploaded_file_path"]:
-                print("⚙️ No uploaded file found — using default data.")
+                print(" ...No uploaded file found — using default data...")
 
             # Load and embed
             uploaded_data = load_docs()
@@ -87,7 +93,7 @@ def index():
                 payload=[{"text": t} for t in uploaded_data],
                 ids=list(range(len(uploaded_data)))
             )
-            print("✅ Collection uploaded to Qdrant.")
+            print(" Collection uploaded to Qdrant.")
 
             # Embed and search relevant context
             query_embedding = embed_model.encode([user_input])[0]
@@ -96,7 +102,10 @@ def index():
                 query_vector=query_embedding,
                 limit=3
             )
+            # Access and join the 'text' field from the payload dictionary in each result
             context = "\n".join([r.payload["text"] for r in results])
+
+            # context = "\n".join([result.get("payload", {}).get("text", "") for result in results])
 
             # Add chat history as context
             history_text = "\n".join(
@@ -109,6 +118,7 @@ def index():
 
             # Save to session history
             session["history"].append({"question": user_input, "answer": answer})
+            
         # user input        
         return render_template("index.html", answer=answer, history=session["history"])
     
@@ -146,7 +156,7 @@ def upload_file():
             payload=[{"text": t} for t in uploaded_data],
             ids=list(range(len(uploaded_data)))
         )
-        print("✅ Collection uploaded to Qdrant.")
+        print(" Collection uploaded to Qdrant.")
         return redirect(url_for("index"))
     return redirect(url_for("index"))
 
