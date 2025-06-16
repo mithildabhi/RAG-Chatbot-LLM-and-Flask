@@ -134,9 +134,9 @@ Edit `data/marks.csv` or add `.txt` files for more context.
 
 ## 📝 License
 
-FREE TO USE THIS REPO
-
-FOLK THE REPO AND USE
+IF YOU WANT TO USE THIS CODE, PLEASE CREDIT ME.
+Free to use, modify, and distribute.
+If any issues, please open an issue or submit a pull request.
 
 ---
 
