@@ -1,5 +1,6 @@
 import os
-from flask import Flask, request, render_template ,session,redirect, url_for
+import io
+from flask import Flask, request, render_template ,session,redirect, url_for,send_file,render_template_string
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
@@ -7,7 +8,7 @@ from qdrant_client.models import VectorParams, Distance
 import google.generativeai as genai
 from flask_session import Session
 from werkzeug.utils import secure_filename
-import pandas as pd
+import pandas as pd 
 
 df = pd.DataFrame()  # Initialize an empty DataFrame to avoid errors if not loaded
 # Flask App Starts here
@@ -18,7 +19,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ✅ Ensure the uploads folder exists
 # os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'csv', 'docx', 'xlsx', 'pptx'}
 def allowed_file(filename):
@@ -38,6 +38,8 @@ client = QdrantClient(":memory:")
 # Load and embed data
 def load_docs():
     filepath = session.get("uploaded_file_path")
+    if filepath is None or not os.path.exists(filepath):
+        filepath = "data/marks.csv"
     
     _, ext = os.path.splitext(filepath)
     ext = ext.lower()
@@ -49,11 +51,11 @@ def load_docs():
         # docs = df
         # Convert each row to a comma-separated string of values
         docs = df.astype(str).apply(", ".join, axis=1).tolist()
-        print(docs)
+        # print(docs)
     else:
         with open(filepath, "r", encoding="latin1") as f:
             docs = f.read().split("\n\n")
-            
+      
     if filepath and os.path.exists(filepath):
         print("-- Using uploaded file:", filepath)
     else:  
@@ -75,10 +77,12 @@ def index():
     answer = "" # for user input answer history
     if request.method == "POST":        
         user_input = request.form["user_input"]
-        if user_input:            
+        if user_input:
+            print(user_input)            
             if "uploaded_file_path" not in session or not session["uploaded_file_path"]:
                 print(" ...No uploaded file found — using default data...")
-
+            if "graph" in user_input.lower():   
+                return redirect(url_for("show_plot"))
             # Load and embed
             uploaded_data = load_docs()
             embeddings = embed_model.encode(uploaded_data)
@@ -168,5 +172,51 @@ def clear():
     
     return redirect(url_for("index"))
 
+@app.route("/show_plot", methods=["GET"])
+def show_plot():
+    # Only generate the plot if the user has searched (i.e., there is chat history)
+    if "history" in session and session["history"]:
+        return redirect(url_for("plot_png"))
+    else:
+        return "Please ask a question first to enable the graph.", 400
+    
+@app.route("/plot.png")
+def plot_png():
+    try:
+        filepath = session.get("uploaded_file_path", "carprices.csv")
+        df = pd.read_csv(filepath)       
+        print(df.head(10))
+        
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 6))
+        df_top5 = df.head(5)  # Select only the first 5 students
+        plt.bar(df_top5["First_Name"], df_top5["Maths"])
+        plt.xlabel('First Name')    
+        plt.ylabel('Marks')
+        plt.title('Top 5 Students Marks in Maths')
+        plt.xticks(rotation=45)
+        plt.tight_layout()  # Adjust layout to prevent clipping of tick-labels
+        plt.grid(True)  
+        
+        # Save the plot image to disk as well
+        output_dir = os.path.join("static", "images")
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, 'plot.png')
+        plt.savefig(output_path, format='png')
+        
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0) # Rewind the cursor to the beginning of the file
+        plt.close() # Close the plot to free up memory
+        image_url = url_for('static', filename='images/plot.png')
+        # return render_template("index.html",himage_url=image_url)
+        # return redirect(url_for("index.html"))
+        session["history"].append({"question": "Show me the plot", "answer": f'<img src="{image_url}" alt="Plot">'})
+        return render_template("index.html",image_url=image_url,history=session["history"])
+
+    except FileNotFoundError:
+        return "Error: File Not Found", 404
+    
+    
 if __name__ == "__main__":
     app.run(debug=True)

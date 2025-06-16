@@ -26,6 +26,11 @@
         <div class="response">
             <h3>Latest Response:</h3>
             <p>{{ answer }}</p>
+            {# Add this section to display the image #}
+            {% if image_url %}
+                <img src="{{ url_for('static', filename='images/plot.png') }}" alt="Generated Plot" style="max-width: 100%; height: auto; display: block; margin-top: 10px;"> 
+            {% endif %}
+        
         </div>
 
         <div class="response">
