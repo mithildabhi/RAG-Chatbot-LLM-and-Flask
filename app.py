@@ -26,8 +26,10 @@ def allowed_file(filename):
 
 # Load API key here
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+# GEMINI_API_KEY = "AIzaSyCIj8WBTttMWnrN8o4q3U7OZH5PQKR2asE   "
+# api_key = os.getenv(GEMINI_API_KEY)
+#API_KEY_HERE
+genai.configure(api_key="AIzaSyCIj8WBTttMWnrN8o4q3U7OZH5PQKR2asE")
 
 # Models and Vector DB 
 embed_model = SentenceTransformer('all-MiniLM-L6-v2')
